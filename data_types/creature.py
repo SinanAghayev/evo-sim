@@ -27,7 +27,7 @@ class Creature(object):
         self.facing_direction: Direction = random.choice(list(Direction))
         self.will_move = False
 
-        self.brain = Brain(self)
+        self.brain: Brain = Brain(self)
         if create_new_brain:
             self.brain.generate_brain()
 

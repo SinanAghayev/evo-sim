@@ -1,66 +1,49 @@
 import sys, pygame
 
 import data_types.constants as constants
-from data_types.simulation import Simulation
+import data_types.config as config
+from data_types.simulator import Simulator
 from data_types.neuron import Neuron
 from data_types.connection import Connection
 
-from utils.ui_utils import draw_to_screen
-
-import networkx as nx
-import matplotlib.pyplot as plt
-
+from utils.ui_utils import draw_to_screen, screen
 from utils.graph import plot_graph
-
-
-def show_connection():
-    # Create a graph
-    G = nx.MultiDiGraph()
-
-    e = []
-    for c in creatures[0].brain.connections:
-        e.append((c.from_n.neuronType, c.to_n.neuronType, "{:.2f}".format(c.weight)))
-
-    G.add_weighted_edges_from(e)
-
-    pos = nx.circular_layout(G)
-    nx.draw(G, pos, with_labels=True, font_weight="bold", arrows=True)
-    # Draw the graph
-    # nx.draw(G, with_labels=True, font_weight='bold', arrows=True)
-    edge_labels = {}
-    for u, v, key, data in G.edges(data=True, keys=True):
-        edge_labels[(u, v, key)] = data["weight"]
-
-    nx.draw_networkx_edge_labels(
-        G, pos, edge_labels={(u, v): w for (u, v, _), w in edge_labels.items()}
-    )
-
-    plt.show()
 
 
 font = pygame.font.Font(pygame.font.get_default_font(), 24)
 
 # Screen
-screen.fill(black)
+screen.fill(constants.COLOR_BLACK)
 
+# TODO: Lots of magic numbers here, fix them
 px = pygame.PixelArray(screen)
-px[2 : width + 2, 2 : height + 2] = white
-px[h_start - 2 : h_end + 2, v_start - 2 : v_end + 2] = black
-px[h_start:h_end, v_start:v_end] = white
-px[h_end + 2 : height, (limit) * c_size + h_start - 2] = (127, 127, 127)
+px[2 : constants.SCREEN_WIDTH + 2, 2 : constants.SCREEN_HEIGHT + 2] = (
+    constants.COLOR_WHITE
+)
+px[
+    constants.HORIZONTAL_START - 2 : constants.HORIZONTAL_END + 2,
+    constants.VERTICAL_START - 2 : constants.VERTICAL_END + 2,
+] = constants.COLOR_BLACK
+
+px[
+    constants.HORIZONTAL_START : constants.HORIZONTAL_END,
+    constants.VERTICAL_START : constants.VERTICAL_END,
+] = constants.COLOR_WHITE
+
+px[
+    constants.HORIZONTAL_END + 2 : constants.SCREEN_HEIGHT,
+    (constants.LIMIT) * constants.CREATURE_SIZE + constants.HORIZONTAL_START - 2,
+] = constants.COLOR_GRAY
 del px
 
-# Survivors from previous generation
-survivors = []
-
+# Initialize simulator
+simulator = Simulator()
 # Initialize creatures
-create()
+simulator.create()
 
 mouse_position = (0, 0)
 drawing = False
 
-t, gen = 0, 1
-past_survivors = 0
 pygame.display.flip()
 
 while 1:
@@ -71,49 +54,55 @@ while 1:
             if event.buttons[0]:  # Left mouse button down.
                 last = (event.pos[0] - event.rel[0], event.pos[1] - event.rel[1])
                 # pygame.draw.line(screen, black, last, event.pos, c_size)
-                x_pos = (last[0] - h_start) // c_size
-                y_pos = (last[1] - v_start) // c_size
-                if 0 < x_pos < pg_size and 0 < y_pos < pg_size:
-                    draw_to_screen(x_pos, y_pos, black)
-                    playground[x_pos][y_pos] = 1
+                x_pos = (
+                    last[0] - constants.HORIZONTAL_START
+                ) // constants.CREATURE_SIZE
+                y_pos = (last[1] - constants.VERTICAL_START) // constants.CREATURE_SIZE
+                if 0 < x_pos < constants.GRID_SIZE and 0 < y_pos < constants.GRID_SIZE:
+                    draw_to_screen(x_pos, y_pos, constants.COLOR_BLACK)
+                    simulator[y_pos][x_pos] = 1
+
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_v:
-                get_connection = not get_connection
-                print(f"{get_connection=}")
+                config.SHOW_CONNECTION_GRAPHS = not config.SHOW_CONNECTION_GRAPHS
+                print(f"{config.SHOW_CONNECTION_GRAPHS=}")
             if event.key == pygame.K_m:
-                mutate = not mutate
-                print(f"{mutate=}")
+                config.ENABLE_MUTATION = not config.ENABLE_MUTATION
+                print(f"{config.ENABLE_MUTATION=}")
             if event.key == pygame.K_s:
-                show = not show
-                print(f"{show=}")
+                config.SHOW_VISUALS = not config.SHOW_VISUALS
+                print(f"{config.SHOW_VISUALS=}")
             if event.key == pygame.K_l:
-                slow = not slow
-                print(f"{slow=}")
+                config.SLOW_MODE = not config.SLOW_MODE
+                print(f"{config.SLOW_MODE=}")
 
     # Prepare the text lines
     text_lines = [
-        f"Gen: {gen}",
-        f"Population: {len(creatures)}",
-        f"Survivors: {past_survivors}",
-        f"T (days lapsed): {t}",
+        f"Gen: {simulator.gen}",
+        f"Population: {len(simulator.creatures)}",
+        f"Survivors: {simulator.previous_survivor_count}",
+        f"T (days lapsed): {simulator.t}",
     ]
     # Start drawing the text at position (800, 50)
     text_position = (800, 50)
-    pygame.draw.rect(screen, white, (800, 50, 240, len(text_lines) * 40))
+    pygame.draw.rect(
+        screen, constants.COLOR_WHITE, (800, 50, 240, len(text_lines) * 40)
+    )
     # Draw each line of text
     for line in text_lines:
-        text_surface = font.render(line, True, black)
+        text_surface = font.render(line, True, constants.COLOR_BLACK)
         screen.blit(text_surface, text_position)
 
         # Move the position down for the next line
         text_position = (800, text_position[1] + 40)  # Adjust the 40 for line spacing
 
-    if not t % 100:
-        print(f"move {t}")
+    if not simulator.t % 100:
+        print(f"move {simulator.t}")
 
     # 300 movements every gen
-    if t == MAX_MOVES:
-        if get_connection:
+    if simulator.t >= constants.MAX_MOVES:
+        if config.SHOW_CONNECTION_GRAPHS:
+            """
             print(f"{len(Neuron.all_neuron_counts)=}")
             print(f"{Neuron.all_neuron_counts=}")
 
@@ -130,44 +119,16 @@ while 1:
                 "activated",
                 "x_label",
                 "y_label",
-            )
-            show_connection()
+            )"""
+            simulator.show_connection_graph()
 
-        Neuron.all_neuron_counts = {i: 0 for i in Neuron.all_neuron_types}
-        Neuron.activated_neurons = {i: 0 for i in Neuron.to_neurons}
-
-        survivors = erase()
-        past_survivors = len(survivors)
-        create()
-        survivors = []
-        t = 0
-        gen += 1
+        simulator.prepare_new_generation()
 
     # Movement of creatures depending their "DNA"
-    for c in creatures:
-        c.get_brain().evaluateConnections()
-        if c.get_will_move():
-            move(c)
-            c.set_will_move(False)
-        c.age += 1
+    simulator.step()
 
-    """
-    ####### For debugging playground
-    for i in range(pg_size):
-        for j in range(pg_size):
-            if playground[i][j]:
-                draw_to_screen(pg_size + j + 1, i, black)
-            else:
-                draw_to_screen(pg_size + j + 1, i, white)
-    """
-
-    if mutate:
-        mutation()
-    # erase_one(t)
-
-    t += 1
-    if slow:
+    if config.SLOW_MODE:
         pygame.time.wait(100)
 
-    if show:
+    if config.SHOW_VISUALS:
         pygame.display.flip()

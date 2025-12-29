@@ -1,6 +1,6 @@
 from enum import Enum
-from enums import Direction, Turn
-import constants
+from data_types.enums import Direction, Turn
+import data_types.constants as constants
 
 
 class NeuronRole(str, Enum):

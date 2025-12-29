@@ -101,7 +101,7 @@ class Brain(object):
     def evaluate_connections(self):
         # Evaluate input neurons
         for connection in self.connections:
-            if not connection.get_source().get_role().is_input():
+            if not connection.get_source().get_role().is_input:
                 continue
 
             target_previous_value = connection.get_target().get_temp_value()
@@ -115,7 +115,7 @@ class Brain(object):
 
         # Evaluate internal neurons
         for connection in self.connections:
-            if not connection.get_source().get_role().is_internal():
+            if not connection.get_source().get_role().is_internal:
                 continue
 
             internal_input = connection.source.get_temp_value()
@@ -141,7 +141,7 @@ class Brain(object):
         max_value = -1
         max_neuron = None
         for neuron in self.all_neurons.values():
-            if neuron.get_role().is_output() and neuron.get_value() > max_value:
+            if neuron.get_role().is_output and neuron.get_value() > max_value:
                 max_value = neuron.get_value()
                 max_neuron = neuron
 
@@ -161,7 +161,13 @@ class Brain(object):
         self.create_new_connection()
 
     def mutate_partially(self):
-        rnd = random.randint(0, len(self.connections) - 1)
+        connection_count = len(self.connections)
+        if connection_count == 0:
+            return
+        elif connection_count == 1:
+            rnd = 0
+        else:
+            rnd = random.randint(0, len(self.connections) - 1)
         self.connections[rnd].mutate()
 
     def get_random_half(self):

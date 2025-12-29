@@ -3,10 +3,10 @@ from enum import IntEnum, Enum
 
 
 class Direction(IntEnum):
-    WEST: 0
-    NORTH: 1
-    EAST: 2
-    SOUTH: 3
+    WEST = 0
+    NORTH = 1
+    EAST = 2
+    SOUTH = 3
 
     def turn_left(self):
         return Direction((self - 1) % 4)

@@ -1,5 +1,4 @@
-import data_types.constants as constants
-from neuron_role import NeuronRole
+from data_types.neuron_role import NeuronRole
 
 
 class Neuron(object):
@@ -23,6 +22,9 @@ class Neuron(object):
     def get_value(self) -> float:
         self.value = self.role.read_value(self.creature)
         return self.value
+
+    def activate(self):
+        self.role.activate(self.creature)
 
     # Getter and setter for role
     def get_role(self) -> NeuronRole:
