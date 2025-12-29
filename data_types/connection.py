@@ -1,26 +1,24 @@
 import random
 from data_types.neuron import Neuron
+from data_types.neuron_role import NeuronRole
 
 
 class Connection(object):
 
-    def __init__(self, from_n, to_n, weight, creature):
-        self.from_n = from_n
-        self.to_n = to_n
+    def __init__(self, source: Neuron, target: Neuron, weight: float, creature):
+        self.source = source
+        self.target = target
         self.weight = weight
         self.creature = creature
-
-        Neuron.all_neuron_counts[from_n.get_neuron_type()] += 1
-        Neuron.all_neuron_counts[to_n.get_neuron_type()] += 1
 
     def mutate(self):
         rnd = random.randint(0, 10)
         if rnd == 0:
-            print("Mutating from_n")
-            self.from_n.set_neuron_type(random.sample(Neuron.all_neuron_types, 1)[0])
+            print("Mutating source neuron")
+            self.source.set_role(random.choice(list(NeuronRole)))
         elif rnd == 1:
-            print("Mutating to_n")
-            self.to_n.set_neuron_type(random.sample(Neuron.all_neuron_types, 1)[0])
+            print("Mutating target neuron")
+            self.target.set_role(random.choice(list(NeuronRole)))
         elif rnd == 2:
             print("Mutating weight")
             self.weight = (random.random() - 0.5) * 8
@@ -30,21 +28,21 @@ class Connection(object):
         self.weight = max(-4, min(4, self.weight))
 
     def __str__(self):
-        return f"{self.from_n.neuronType} -> {self.weight} -> {self.to_n.neuronType}"
+        return f"{self.source.role} -> {self.weight} -> {self.target.role}"
 
     # Getter and setter for from_n
-    def get_from_n(self):
-        return self.from_n
+    def get_source(self):
+        return self.source
 
-    def set_from_n(self, value):
-        self.from_n = value
+    def set_source(self, value):
+        self.source = value
 
     # Getter and setter for to_n
-    def get_to_n(self):
-        return self.to_n
+    def get_target(self):
+        return self.target
 
-    def set_to_n(self, value):
-        self.to_n = value
+    def set_target(self, value):
+        self.target = value
 
     # Getter and setter for weight
     def get_weight(self):

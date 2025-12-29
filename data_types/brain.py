@@ -1,65 +1,81 @@
 import random, math, sys
+import data_types.constants as constants
+
+from data_types.neuron_role import NeuronRole
 from data_types.neuron import Neuron
 from data_types.connection import Connection
-from data_types.constants import *
 
 
 class Brain(object):
+
+    connections: list[Connection]
+    all_neurons: dict[NeuronRole, Neuron]
 
     def __init__(self, creature):
         self.creature = creature
 
         self.connections = []
-        self.allNeurons = {}
+        self.all_neurons = {}
 
-    def generateBrain(self):
+    def generate_brain(self):
         self.connections = []
-        for _ in range(brainComplexity):
-            self.createNewConnection()
+        for _ in range(constants.BRAIN_COMPLEXITY):
+            self.create_new_connection()
 
-    def createNewConnection(self):
-        nType = random.sample(Neuron.from_neurons, 1)[0]
-        if nType in self.allNeurons:
-            fromNeuron = self.allNeurons.get(nType)
-        else:
-            fromNeuron = Neuron(False, nType, self.creature)
-
-        nType = random.sample(Neuron.to_neurons, 1)[0]
-        if nType in self.allNeurons:
-            toNeuron = self.allNeurons.get(nType)
-        else:
-            toNeuron = Neuron(True, nType, self.creature)
-
-        connection = Connection(
-            fromNeuron, toNeuron, (random.random() - 0.5) * 8, self.creature
+    def create_new_connection(self):
+        # Create or get source neuron
+        neuron_role = random.choice(
+            [n for n in NeuronRole if n.is_input or n.is_internal]
         )
+        if neuron_role in self.all_neurons:
+            source_neuron = self.all_neurons.get(neuron_role)
+        else:
+            source_neuron = Neuron(neuron_role, self.creature)
+            self.all_neurons[neuron_role] = source_neuron
+
+        # Create or get target neuron
+        neuron_role = random.choice(
+            [n for n in NeuronRole if n.is_output or n.is_internal]
+        )
+        if neuron_role in self.all_neurons:
+            target_neuron = self.all_neurons.get(neuron_role)
+        else:
+            target_neuron = Neuron(neuron_role, self.creature)
+            self.all_neurons[neuron_role] = target_neuron
+
+        weight = (random.random() - 0.5) * 8
+
+        # Create connection
+        connection = Connection(source_neuron, target_neuron, weight, self.creature)
 
         self.connections.append(connection)
 
     # This function is for "reproduction" purposes.
-    def addExistingConnections(self, connections):
+    def add_existing_connections(self, connections: list[Connection]):
         self.connections = []
 
-        for c in connections:
-            fromType = c.get_from_n().get_neuron_type()
-            if fromType not in self.allNeurons:
-                self.allNeurons[fromType] = Neuron(False, fromType, self.creature)
+        for connection in connections:
+            source_role = connection.get_source().get_role()
+            if source_role not in self.all_neurons:
+                self.all_neurons[source_role] = Neuron(source_role, self.creature)
 
-            toType = c.get_to_n().get_neuron_type()
-            if toType not in self.allNeurons:
-                self.allNeurons[toType] = Neuron(True, toType, self.creature)
+            target_role = connection.get_target().get_role()
+            if target_role not in self.all_neurons:
+                self.all_neurons[target_role] = Neuron(target_role, self.creature)
 
-            connection = Connection(
-                self.allNeurons[fromType],
-                self.allNeurons[toType],
-                c.weight,
+            new_connection = Connection(
+                self.all_neurons[source_role],
+                self.all_neurons[target_role],
+                connection.weight,
                 self.creature,
             )
-            self.connections.append(connection)
+            self.connections.append(new_connection)
+
         if random.random() < 0.001:
             print("Mutating while creating brain")
             self.mutate()
 
+    """
     def addExistingConnectionsFromFile(self, connections):
         # TODO - Not corrected, need to have a look if this will be used
         self.connections = []
@@ -80,42 +96,56 @@ class Brain(object):
                 self.creature,
             )
             self.connections.append(connection)
+    """
 
-    def evaluateConnections(self):
-        for c in self.connections:
-            if c.from_n.neuronType in Neuron.input_neurons:
-                c.get_to_n().set_temp_value(
-                    c.get_to_n().get_temp_value()
-                    + c.get_from_n().getValue() * c.get_weight()
-                )
-
-        for c in self.connections:
-            if c.from_n.neuronType in Neuron.internal_neurons:
-                c.from_n.set_temp_value(activation(c.from_n.get_temp_value()))
-                c.get_to_n().set_temp_value(
-                    c.get_to_n().get_temp_value()
-                    + c.get_from_n().get_temp_value() * c.get_weight()
-                )
-
-        for neuron in Neuron.all_neuron_types:
-            if neuron not in self.allNeurons:
+    def evaluate_connections(self):
+        # Evaluate input neurons
+        for connection in self.connections:
+            if not connection.get_source().get_role().is_input():
                 continue
-            self.allNeurons[neuron].set_value(
-                activation(self.allNeurons[neuron].get_temp_value())
+
+            target_previous_value = connection.get_target().get_temp_value()
+            evaluated_value = (
+                connection.get_source().get_value() * connection.get_weight()
             )
-            self.allNeurons[neuron].set_temp_value(0)
 
-        self.activateNeurons()
+            connection.get_target().set_temp_value(
+                target_previous_value + evaluated_value
+            )
 
-    def activateNeurons(self):
-        curr_max = -1
+        # Evaluate internal neurons
+        for connection in self.connections:
+            if not connection.get_source().get_role().is_internal():
+                continue
+
+            internal_input = connection.source.get_temp_value()
+            connection.get_source().set_temp_value(activation(internal_input))
+
+            target_previous_value = connection.get_target().get_temp_value()
+            evaluated_value = (
+                connection.get_source().get_temp_value() * connection.get_weight()
+            )
+
+            connection.get_target().set_temp_value(
+                target_previous_value + evaluated_value
+            )
+
+        # Reset temp_values of all neurons for future use.
+        for neuron in self.all_neurons.values():
+            neuron.set_value(activation(neuron.get_temp_value()))
+            neuron.set_temp_value(0)
+
+        self.activate_neurons()
+
+    def activate_neurons(self):
+        max_value = -1
         max_neuron = None
-        for n in self.allNeurons.values():
-            if n.neuronType in Neuron.output_neurons and n.value > curr_max:
-                curr_max = n.value
-                max_neuron = n
+        for neuron in self.all_neurons.values():
+            if neuron.get_role().is_output() and neuron.get_value() > max_value:
+                max_value = neuron.get_value()
+                max_neuron = neuron
 
-        if curr_max < 0:
+        if max_value < 0:
             return
 
         max_neuron.activate()
@@ -124,10 +154,11 @@ class Brain(object):
         if random.random() < 0.7:
             self.mutate_partially()
             return
+
         print("Mutating whole connection")
         rnd = random.randint(0, len(self.connections) - 1)
         self.connections.remove(self.connections[rnd])
-        self.createNewConnection()
+        self.create_new_connection()
 
     def mutate_partially(self):
         rnd = random.randint(0, len(self.connections) - 1)
@@ -141,13 +172,11 @@ class Brain(object):
     def __str__(self):
         temp = ""
         for c in self.connections:
-            temp += f"{c.get_from_n().get_neuron_type()}, {c.get_weight()}, {c.get_to_n().get_neuron_type()}\n"
+            temp += f"{c.get_source().get_role()}, {c.get_weight()}, {c.get_target().get_role()}\n"
         return temp
 
 
 def activation(x):
-    # Define your sigmoid function implementation here
-    # For example, you can use the math module:
     return math.tanh(x)
     return max(0, x)
     return 1 / (1 + math.exp(-x))

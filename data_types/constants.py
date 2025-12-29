@@ -1,24 +1,16 @@
-MAX_MOVES = 400
-pg_size = 250
-c_count = 500
-brainComplexity = 1
+MAX_MOVES: int = 400
+PLAYGROUND_SIZE: int = 250
+CREATURE_COUNT = 500
+BRAIN_COMPLEXITY = 1
 limit = 20
 
-size = width, height = 1080, 800
-black = 0, 0, 0
-white = 255, 255, 255
-h_start, v_start = 20, 20
+SCREEN_SIZE = WIDTH, HEIGHT = 1080, 800
+COLOR_BLACK = 0, 0, 0
+COLOR_WHITE = 255, 255, 255
+HORIZONTAL_START, VERTICAL_START = 20, 20
 
-c_size = 3
-h_end, v_end = pg_size * c_size + h_start, pg_size * c_size + v_start
-
-get_connection = False
-fromFile = False
-mutate = True
-show, slow = True, False
-
-
-playground = [[0 for i in range(pg_size)] for _ in range(pg_size)]
-creatures = []
-survivors = []
-empty_squares = [(i, j) for i in range(pg_size) for j in range(pg_size)]
+CREATURE_SIZE = 3
+HORIZONTAL_END, VERTICAL_END = (
+    PLAYGROUND_SIZE * CREATURE_SIZE + HORIZONTAL_START,
+    PLAYGROUND_SIZE * CREATURE_SIZE + VERTICAL_START,
+)

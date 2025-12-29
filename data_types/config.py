@@ -1,0 +1,4 @@
+GET_CONNECTION = False
+READ_FROM_FILE = False
+MUTATE = True
+SHOW, SLOW = True, False
