@@ -1,15 +1,16 @@
 import sys, pygame
+
+import data_types.constants as constants
+from data_types.simulation import Simulation
+from data_types.neuron import Neuron
 from data_types.connection import Connection
 
-from data_types.constants import *
-from functions.simulation_functions import *
-from functions.ui_functions import *
-from data_types.neuron import Neuron
+from utils.ui_utils import draw_to_screen
 
 import networkx as nx
 import matplotlib.pyplot as plt
 
-from functions.graph import *
+from utils.graph import plot_graph
 
 
 def show_connection():

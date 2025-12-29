@@ -1,4 +1,5 @@
 from enum import Enum
+from enums import Direction, Turn
 import constants
 
 
@@ -70,17 +71,27 @@ class NeuronRole(str, Enum):
             case NeuronRole.AGE:
                 return creature.get_age() / constants.MAX_MOVES
             case NeuronRole.X_COORD:
-                return creature.x / constants.PLAYGROUND_SIZE
+                return creature.x / constants.GRID_SIZE
             case NeuronRole.Y_COORD:
-                return creature.y / constants.PLAYGROUND_SIZE
+                return creature.y / constants.GRID_SIZE
             case NeuronRole.DIST_TO_WEST:
-                return creature.dist("west") / constants.PLAYGROUND_SIZE
+                return (
+                    creature.distance_to_direction(Direction.WEST) / constants.GRID_SIZE
+                )
             case NeuronRole.DIST_TO_EAST:
-                return creature.dist("east") / constants.PLAYGROUND_SIZE
+                return (
+                    creature.distance_to_direction(Direction.EAST) / constants.GRID_SIZE
+                )
             case NeuronRole.DIST_TO_NORTH:
-                return creature.dist("north") / constants.PLAYGROUND_SIZE
+                return (
+                    creature.distance_to_direction(Direction.NORTH)
+                    / constants.GRID_SIZE
+                )
             case NeuronRole.DIST_TO_SOUTH:
-                return creature.dist("south") / constants.PLAYGROUND_SIZE
+                return (
+                    creature.distance_to_direction(Direction.SOUTH)
+                    / constants.GRID_SIZE
+                )
             case _:
                 return 0.0
 
@@ -88,26 +99,26 @@ class NeuronRole(str, Enum):
     def activate(self, creature) -> None:
         match self:
             case NeuronRole.MOVE_WEST:
-                creature.move("west")
+                creature.move(Direction.WEST)
             case NeuronRole.MOVE_NORTH:
-                creature.move("north")
+                creature.move(Direction.NORTH)
             case NeuronRole.MOVE_EAST:
-                creature.move("east")
+                creature.move(Direction.EAST)
             case NeuronRole.MOVE_SOUTH:
-                creature.move("south")
+                creature.move(Direction.SOUTH)
             case NeuronRole.MOVE_LEFT:
-                creature.move("left")
+                creature.move(Turn.LEFT)
             case NeuronRole.MOVE_FORWARD:
-                creature.move("forward")
+                creature.move(Turn.FORWARD)
             case NeuronRole.MOVE_RIGHT:
-                creature.move("right")
+                creature.move(Turn.RIGHT)
             case NeuronRole.MOVE_BACKWARD:
-                creature.move("backward")
+                creature.move(Turn.BACKWARD)
             case NeuronRole.MOVE_RANDOM:
-                creature.move("random")
+                creature.move(Turn.RANDOM)
             case NeuronRole.TURN_LEFT:
-                creature.choose_move_direction("left")
+                creature.choose_move_direction(Turn.LEFT)
             case NeuronRole.TURN_RIGHT:
-                creature.choose_move_direction("right")
+                creature.choose_move_direction(Turn.RIGHT)
             case _:
                 pass

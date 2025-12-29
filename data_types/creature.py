@@ -1,35 +1,8 @@
 import random
-from enum import IntEnum, Enum
 
 import data_types.constants as constants
 from data_types.brain import Brain
-
-
-class Direction(IntEnum):
-    WEST: 0
-    NORTH: 1
-    EAST: 2
-    SOUTH: 3
-
-    def turn_left(self):
-        return Direction((self - 1) % 4)
-
-    def turn_right(self):
-        return Direction((self + 1) % 4)
-
-    def turn_backward(self):
-        return Direction((self + 2) % 4)
-
-    @staticmethod
-    def random():
-        return Direction(random.randint(0, 3))
-
-
-class Turn(Enum):
-    LEFT = "left"
-    RIGHT = "right"
-    BACKWARD = "backward"
-    RANDOM = "random"
+from data_types.enums import Direction, Turn
 
 
 class Creature(object):
